@@ -1,24 +1,45 @@
 # AI Phishing Detector
 
-Baseline ML model for detecting phishing emails using:
-- TF-IDF
-- Logistic Regression
-- scikit-learn
+A baseline machine learning model for detecting phishing emails using TF-IDF and Logistic Regression.  
+Built with Python and scikit-learn.
+
+---
 
 ## Dataset
-Email texts labeled as phishing (1) or legitimate (0).
+- Emails labeled as phishing (1) or legitimate (0)
+- Used for training and testing the model
 
-## Current Status
-- Baseline model trained
-- Accuracy on test set ~0.98 (high, may indicate data leakage)
-- Manual testing underway
+---
 
-## Next Steps
-- Validate model predictions on manual examples
-- Explore additional features (subject, sender)
-- Deploy with Flask API
+## Model
+- **Pipeline:** TF-IDF vectorization → Logistic Regression classifier
+- **Performance:** ~0.98 accuracy on the test set (high, may indicate data leakage)
+- **Explainability:** Top words influencing model predictions extracted from coefficients
 
-## How to run
-1. Clone repo
-2. Install dependencies: `pip install -r requirements.txt`
-3. Run `notebooks/eda.ipynb` in Jupyter Notebook
+---
+
+## Top Words Analysis
+The model reacts to trigger words often found in phishing emails. Examples include:
+account, bank, payment, transaction
+
+
+Red words increase the probability of phishing, green words decrease it.
+
+### Visualization
+A bar chart showing **word contribution** for a sample email:
+
+![Word Contributions](images/word_contributions.png)
+
+---
+
+## Error Analysis
+- **False Positives (FP):** Legitimate emails with links or financial terms misclassified as phishing
+- **False Negatives (FN):** Phishing emails without obvious trigger words missed
+- **Reason:** Bag-of-words nature of TF-IDF; context is not considered
+
+---
+
+## Usage
+1. Train or load the model via scikit-learn pipeline
+2. Make predictions on new emails
+3. Analyze top word contributions for explainable AI
