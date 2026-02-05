@@ -19,11 +19,11 @@ Built with Python and scikit-learn.
 ---
 
 ## Top Words Analysis
-The model reacts to trigger words often found in phishing emails. Examples include:
+The model reacts to trigger words often found in phishing emails. Examples include:  
 account, bank, payment, transaction
 
-
-Red words increase the probability of phishing, green words decrease it.
+- **Red words** → increase the probability of phishing  
+- **Green words** → decrease the probability of phishing
 
 ### Visualization
 A bar chart showing **word contribution** for a sample email:
@@ -32,14 +32,21 @@ A bar chart showing **word contribution** for a sample email:
 
 ---
 
+## Confusion Matrix
+Shows how the model performs on each class (phishing vs ham):
+
+![Confusion Matrix](images/confusion_matrix.png)
+
+---
+
 ## Error Analysis
-- **False Positives (FP):** Legitimate emails with links or financial terms misclassified as phishing
-- **False Negatives (FN):** Phishing emails without obvious trigger words missed
+- **False Positives (FP):** Legitimate emails with links or financial terms misclassified as phishing  
+- **False Negatives (FN):** Phishing emails without obvious trigger words missed  
 - **Reason:** Bag-of-words nature of TF-IDF; context is not considered
 
 ---
 
 ## Usage
-1. Train or load the model via scikit-learn pipeline
-2. Make predictions on new emails
+1. Train or load the model via scikit-learn pipeline  
+2. Make predictions on new emails  
 3. Analyze top word contributions for explainable AI
