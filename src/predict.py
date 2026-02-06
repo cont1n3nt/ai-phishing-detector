@@ -8,7 +8,7 @@ def predict_email(text: str):
     return pred, proba
 
 if __name__ == "__main__":
-    test_email = "Verify your account now by clicking the link"
+    test_email = "Your account has been suspended. Click here."
     pred, proba = predict_email(test_email)
     
     print("Prediction:", pred)
