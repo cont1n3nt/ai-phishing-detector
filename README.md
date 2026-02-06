@@ -1,52 +1,64 @@
 # AI Phishing Detector
 
 A baseline machine learning model for detecting phishing emails using TF-IDF and Logistic Regression.  
-Built with Python and scikit-learn.
+Built with Python, scikit-learn, and Flask for serving predictions.
 
 ---
 
 ## Dataset
 - Emails labeled as phishing (1) or legitimate (0)
-- Used for training and testing the model
+- Combined multiple sources for training and testing the model
 
 ---
 
 ## Model
 - **Pipeline:** TF-IDF vectorization → Logistic Regression classifier
-- **Performance:** ~0.98 accuracy on the test set (high, may indicate data leakage)
+- **Performance:** ~0.99 accuracy on the test set (high, may indicate data leakage)
 - **Explainability:** Top words influencing model predictions extracted from coefficients
-
 ---
-
-## Top Words Analysis
-The model reacts to trigger words often found in phishing emails. Examples include:  
-account, bank, payment, transaction
-
-- **Red words** → increase the probability of phishing  
-- **Green words** → decrease the probability of phishing
-
 ### Visualization
-A bar chart showing **word contribution** for a sample email:
+**Word contribution**:
 
 ![Word Contributions](images/word_contributions.png)
 
 ---
 
-## Confusion Matrix
-Shows how the model performs on each class (phishing vs ham):
+**Confusion matrix***:
 
 ![Confusion Matrix](images/confusion_matrix.png)
 
 ---
 
-## Error Analysis
-- **False Positives (FP):** Legitimate emails with links or financial terms misclassified as phishing  
-- **False Negatives (FN):** Phishing emails without obvious trigger words missed  
-- **Reason:** Bag-of-words nature of TF-IDF; context is not considered
-
----
-
 ## Usage
-1. Train or load the model via scikit-learn pipeline  
-2. Make predictions on new emails  
-3. Analyze top word contributions for explainable AI
+
+### 1. Setting up virtual environment
+
+#### Windows
+```cmd
+python -m venv venv
+venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+### Linux / Mac
+```cmd
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+- Activating venv ensures project dependencies do not conflict with system Python.
+
+### 2. Predict via Flask API
+Start server:
+```cmd
+python app.py
+```
+POST to /predict endpoint with JSON:
+```json
+{"text": "Your email here"}
+```
+Response:
+```json
+{"prediction": 1, "probability": 0.949}
+```
