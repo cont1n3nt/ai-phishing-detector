@@ -23,7 +23,7 @@ Built with Python, scikit-learn, and Flask, including a simple web interface and
 ## Visualizations
 
 **Confusion matrix:**  
-![Confusion Matrix](images/confusion_matrix.png)
+![Confusion Matrix](images/conf_matrix.png)
 
 ---
 
@@ -44,7 +44,7 @@ python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
-- Run web  app $ API
+- Run web  app & API
 ```bash
 python app.py
 ```
