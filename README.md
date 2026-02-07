@@ -1,64 +1,58 @@
 # AI Phishing Detector
 
-A baseline machine learning model for detecting phishing emails using TF-IDF and Logistic Regression.  
-Built with Python, scikit-learn, and Flask for serving predictions.
+A machine learning project for detecting phishing emails using TF-IDF and Logistic Regression.  
+Built with Python, scikit-learn, and Flask, including a simple web interface and REST API.
 
 ---
 
-## Dataset
-- Emails labeled as phishing (1) or legitimate (0)
-- Combined multiple sources for training and testing the model
+## Overview
+- Binary classification: phishing (1) vs legitimate (0)
+- Trained on multiple combined datasets
+- Focus on interpretability, error analysis, and production-style inference
 
 ---
 
 ## Model
-- **Pipeline:** TF-IDF vectorization → Logistic Regression classifier
-- **Performance:** ~0.99 accuracy on the test set (high, may indicate data leakage)
-- **Explainability:** Top words influencing model predictions extracted from coefficients
----
-### Visualization
-**Word contribution**:
-
-![Word Contributions](images/word_contributions.png)
+- **Pipeline:** TF-IDF → Logistic Regression
+- **Metrics:** High accuracy (~0.98–0.99); recall prioritized for phishing class
+- **Threshold:** Custom decision threshold to reduce false negatives
+- **Explainability:** Top contributing words extracted from model coefficients
 
 ---
 
-**Confusion matrix***:
+## Visualizations
 
+**Confusion matrix:**  
 ![Confusion Matrix](images/confusion_matrix.png)
+
+---
+
+## Limitations & Observations
+- Bag-of-words approach: no understanding of context or semantics
+- Strong sensitivity to trigger words → false positives
+- May miss phishing emails without obvious keywords (false negatives)
+- Decision threshold directly affects recall/precision trade-off
+- Probabilities can be overconfident due to linear model assumptions
 
 ---
 
 ## Usage
 
-### 1. Setting up virtual environment
-
-#### Windows
-```cmd
+### Setup (Windows / Linux / macOS)
+```bash
 python -m venv venv
-venv\Scripts\activate
-pip install --upgrade pip
+source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
-### Linux / Mac
-```cmd
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-- Activating venv ensures project dependencies do not conflict with system Python.
-
-### 2. Predict via Flask API
-Start server:
-```cmd
+- Run web  app $ API
+```bash
 python app.py
 ```
-POST to /predict endpoint with JSON:
+#### API Example
 ```json
-{"text": "Your email here"}
-```
+POST /predict
+{"text": "Your account has been suspended. Click here."}
+
 Response:
-```json
 {"prediction": 1, "probability": 0.949}
 ```

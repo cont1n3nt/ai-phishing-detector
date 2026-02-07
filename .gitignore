@@ -1,15 +1,30 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
 # Virtual environment
 venv/
+env/
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Data
+# Data (если не хочешь грузить исходники)
 data/*.csv
 
 # Environment variables
 .env
+
+# Logs
+*.log
+
+# VSCode / PyCharm / IDE
+.vscode/
+.idea/
+
+# Utils / temporary files для экспериментов
+utils/dataset_build.py
+utils/evaluate.py
+utils/train.py

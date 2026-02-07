@@ -1,29 +1,32 @@
-from flask import Flask, request, jsonify
-import joblib
+from flask import Flask, request, jsonify, render_template
+from utils.predict import predict_email
+from utils.utils import validate_text, get_top_words, load_model
 
 app = Flask(__name__)
-model = joblib.load("model/pipeline.joblib")
+MODEL = load_model()
 
 @app.route("/")
-def home():
-    return "Hello, AI Phishing Detector is running, model loaded successfully"
+def index():
+    return render_template("index.html")
 
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json()
-    
-    if "text" not in data:
-        return jsonify({"error": "No text"}), 400
-    
-    text = data["text"]
-    if not data["text"].strip():
-        return jsonify({"error": "Text is empty"}), 400
-    pred = model.predict([text])[0]
-    proba = model.predict_proba([text])[0][1]
-    
+    is_valid, result = validate_text(data)
+    if not is_valid:
+        return jsonify({"error": result}), 400
+
+    text = result
+    threshold = data.get("threshold", 0.4)
+    prediction, probability = predict_email(text, threshold=threshold)
+    top_words = get_top_words(MODEL, text)
+    prediction_label = "PHISHING" if probability >= threshold else "LEGITIMATE"
+
     return jsonify({
-        "prediction": int(pred),
-        "probability": round(float(proba), 3)
+        "prediction": prediction,
+        "label": prediction_label,
+        "probability": round(float(probability), 3),
+        "top_words": top_words
     })
 
 if __name__ == "__main__":
