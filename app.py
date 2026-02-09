@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from src.predict import predict_email
-from src.utils import validate_text, get_top_words, load_model
+from src.features import validate_text
 
 app = Flask(__name__)
 

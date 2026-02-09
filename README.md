@@ -2,122 +2,156 @@
 
 ## Project Overview
 
-This project is a machine learning pipeline for detecting phishing messages from text. It uses TF-IDF vectorization and multiple models including Logistic Regression, Random Forest, and XGBoost (Gradient Boosting). The architecture separates **data preprocessing**, **training**, **inference**, and **API**, following best practices for middle-level ML projects.
+This project is a machine learning system for detecting phishing messages from text.
+It implements a full pipeline including preprocessing, model training, evaluation, inference, and a Flask API.
+
+The solution uses TF-IDF vectorization and an ensemble model (VotingClassifier) combining:
+
+* Logistic Regression
+* Random Forest
+* XGBoost
+
+The project structure and engineering decisions follow middle-level ML engineering best practices.
+
+---
 
 ## Motivation
 
-Phishing attacks are a major cybersecurity threat. Automating detection helps reduce risk and improve security awareness.
+Phishing attacks remain one of the most common cybersecurity threats.
+Automated detection systems can significantly reduce risk by identifying malicious messages before users interact with them.
+
+---
 
 ## Dataset
 
-* Source: **Collected from multiple Kaggle datasets and merged into a single dataset**
-* Total samples: XXX
-* Class balance: phishing / legit
-* Preprocessing steps:
+* Source: Multiple phishing-related datasets collected from Kaggle and merged into a single dataset
+* Total samples: ~114,000
+* Class balance: ~50% phishing / ~50% legitimate
 
-  * Lowercasing
-  * Removal of URLs
-  * Removal of non-alphabetic characters
-  * TF-IDF vectorization (uni-grams + bi-grams, max 5000 features)
+### Preprocessing steps
 
-> ⚠️ **Note:** The repository does not include the raw data to keep it lightweight. You can download similar datasets from [Kaggle phishing datasets](https://www.kaggle.com/search?q=phishing+dataset) and merge them for training.
+* Lowercasing
+* URL removal
+* Removal of non-alphabetic characters
+* Whitespace normalization
+* TF-IDF vectorization (uni-grams + bi-grams, max 5000 features)
 
-## Features
+NOTE:
+Raw datasets are not included in this repository to keep it lightweight.
+You can download similar datasets from Kaggle and merge them locally for training.
 
-* Implemented in `src/features.py`
-* Preprocessing functions:
+---
 
-  * `clean_text(text: str) -> str`
-  * `preprocess_texts(texts: List[str]) -> List[str]`
-* TF-IDF vectorizer produces feature matrix for all models
+## Features & Preprocessing
 
-## Models Implemented
+Implemented in src/features.py:
 
-* Logistic Regression (baseline)
-* Random Forest
-* XGBoost (Gradient Boosting)
+* clean_text(text: str) -> str
+* preprocess_texts(texts: List[str]) -> List[str]
+* Input validation for inference
+* Feature contribution extraction for explainability
+
+TF-IDF vectorization is applied inside a unified Pipeline.
+
+---
+
+## Models
+
+The final model is an ensemble using soft voting:
+
+* Logistic Regression (interpretable baseline)
+* Random Forest (non-linear patterns)
+* XGBoost (gradient boosting)
+
+The ensemble improves robustness and generalization while retaining interpretability via Logistic Regression.
+
+---
 
 ## Experiments & Metrics
 
-| Model              | Accuracy | F1-score | Precision | Recall |
-| ------------------ | -------- | -------- | --------- | ------ |
-| LogisticRegression | 0.980    | 0.980    | 0.976     | 0.984  |
-| RandomForest       | 0.988    | 0.988    | 0.987     | 0.988  |
-| XGBoost            | 0.984    | 0.984    | 0.977     | 0.990  |
+Visualizations:
 
-* Cross-validation F1-score: 0.986
-* ROC-AUC: 0.999
-* Confusion matrix
+![mt](images/metrics_table.png)
+
+![cm](images/confusion_matrix.png)
 
 ![roc](images/roc_curve.png)
---
-![matrix](images/new_conf_matrix.png)
+
+
+---
 
 ## Project Architecture
 
+Mermaid diagram (GitHub compatible):
+
 ```mermaid
 graph TD
-    A["Raw Data (CSV/JSON from Kaggle)"] --> B[Process Data]
-    B --> C["TF-IDF Vectorization"]
-    C --> D["Train Models"]
-    D --> E{"Models: LogisticRegression, RandomForest, XGBoost"}
-    E --> F["Evaluate Metrics: Accuracy, F1, Precision, Recall, ROC-AUC"]
-    F --> G["Save Best Model"]
-    G --> H["Predict Module (`predict.py`)"]
-    H --> I["Flask API (`app.py`)"]
-    I --> J["User Input / Prediction Output"]
+    A[Raw Data from Kaggle] --> B[Preprocessing]
+    B --> C[TF-IDF Vectorization]
+    C --> D[Model Training]
+    D --> E[VotingClassifier: LR + RF + XGB]
+    E --> F[Evaluation & Metrics]
+    F --> G[Saved Pipeline]
+    G --> H[Inference: predict.py]
+    H --> I[Flask API: app.py]
+    I --> J[Prediction Output]
 ```
 
-**Explanation:**
+---
 
-* Data flows from Kaggle datasets (merged) to preprocessing
-* TF-IDF converts text into feature vectors
-* Models are trained, evaluated, and the best model is saved
-* `predict.py` handles inference
-* `app.py` exposes a thin Flask API
-* Users can send requests and get predictions with confidence scores
+## API Usage Example
 
-## Usage / API Example
+Start the API:
 
-```bash
-curl -X POST http://127.0.0.1:5000/predict -H "Content-Type: application/json" -d '{"text":"Your account is blocked, verify it"}'
-```
+python app.py
 
-Response:
+Request example:
 
-```json
+curl -X POST [http://127.0.0.1:5000/predict](http://127.0.0.1:5000/predict) 
+-H "Content-Type: application/json" 
+-d '{"text": "Your account is blocked. Verify immediately."}'
+
+Example response:
+
 {
-  "label": "phishing",
-  "confidence": 0.987
+"prediction": 1,
+"label": "PHISHING",
+"probability": 0.987,
+"top_words": [["verify", 0.84], ["account", 0.63]]
 }
-```
+
+---
 
 ## Directory Structure
 
-```
 ai-phishing-detector/
-├── data/               # raw and processed datasets (not included)
-├── images/             # visualizations (confusion matrix, ROC)
-├── model/              # saved models (.pkl / .joblib)
-├── src/
-│   ├── features.py     # preprocessing functions
-│   ├── models.py       # model definitions
-│   ├── train.py        # training scripts
-│   └── predict.py      # inference functions
-├── app.py              # Flask API
-├── requirements.txt
-├── README.md
-└── CHANGELOG.md
-```
+
+* data/        datasets (not included)
+* images/      ROC curve and confusion matrix
+* model/       saved pipeline
+* src/
+
+  * features.py   preprocessing and explainability
+  * train.py      training and evaluation
+  * predict.py    inference logic
+* app.py       Flask API
+* requirements.txt
+* README.md
+* CHANGELOG.md
+
+---
 
 ## Limitations & Future Work
 
-* Ensemble between RF and XGBoost could improve performance
+* Add SHAP-based explainability
 * Extend to multiple languages
-* Automatic dataset updates
-* Adding more metrics visualization (precision-recall curves, feature importance)
+* Dockerize for deployment
+* Automatic retraining pipeline
+
+---
 
 ## References
 
-* [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-* [Mermaid.js for diagrams](https://mermaid.js.org/)
+* [https://scikit-learn.org/](https://scikit-learn.org/)
+* [https://xgboost.readthedocs.io/](https://xgboost.readthedocs.io/)
+* [https://mermaid.js.org/](https://mermaid.js.org/)

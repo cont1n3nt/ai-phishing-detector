@@ -23,14 +23,6 @@ df_base["label"] = df_base["label"].astype(int)
 
 df_all = pd.concat([df_base, df_1, df_2], ignore_index=True)
 
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r"http\S+|www\S+|[\w\.-]+@[\w\.-]+", " ", text)
-    text = re.sub(r"[^a-z\s]", " ", text)
-    text = " ".join([w for w in text.split() if len(w) > 2])
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
-
 df_all["text"] = df_all["text"].fillna("").astype(str)
 
 df_all = df_all.sample(frac=1, random_state=42).reset_index(drop=True)

@@ -3,29 +3,31 @@
 ## [Unreleased] - 09-02-2026
 
 ### Added
-- `features.py`: all text preprocessing functions moved from `utils.py`
-- `models.py`: added Random Forest and XGBoost model definitions
-- `train.py`: training pipeline updated to include RF and XGB
-- Metrics and evaluation:
-  - Confusion matrix visualization
-  - ROC-AUC calculation
-  - Cross-validation F1-score (5-fold)
-- Comparative evaluation of models: LogisticRegression, RandomForest, XGBoost
-- Updated README with:
-  - Project architecture diagram (Mermaid)
-  - Metrics table
-  - Usage example for Flask API
+- Ensemble learning via `VotingClassifier` (Logistic Regression + Random Forest + XGBoost)
+- End-to-end `Pipeline` (TF-IDF → Ensemble model)
+- 5-fold cross-validation with F1-score reporting
+- ROC-AUC calculation and ROC curve visualization
+- Confusion matrix visualization for test set
+- Probability-based prediction with configurable threshold
+- Explainability:
+  - Extraction of top contributing words using Logistic Regression coefficients
+  - Feature contribution returned in API response
 
 ### Changed
-- Removed `utils.py` to simplify preprocessing structure
-- Refactored project structure for middle-level ML architecture:
-  - Modular separation: preprocessing, models, training, inference
-  - Clear distinction between training scripts and inference/API scripts
+- Refactored training logic to use `Pipeline` instead of manual vectorization
+- Unified preprocessing logic inside `features.py`
+- Simplified inference logic: model + vectorizer loaded as a single pipeline
+- Updated Flask API to support threshold control and explainability output
+- Project structure aligned with middle-level ML engineering practices:
+  - Clear separation between training, inference, and API layers
 
 ### Fixed
-- Minor bugs in preprocessing pipeline (edge cases in text cleaning)
-- Fixed evaluation scripts to handle new model outputs correctly
+- Fixed incompatibility between ensemble models and explainability logic
+- Fixed Flask API startup issues related to missing or outdated models
+- Fixed preprocessing edge cases (short text, invalid input)
+- Fixed model loading errors and mismatched feature spaces
 
 ### Notes
-- Raw dataset not included to keep repo lightweight; data sourced from multiple Kaggle phishing datasets and merged
-- Only `predict.py` and `features.py` are intended for import outside `src/`
+- Raw datasets are not included to keep the repository lightweight
+- Training data was collected from multiple Kaggle phishing datasets and merged into a single dataset
+- Only `predict.py` and `features.py` are intended to be imported for inference
