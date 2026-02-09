@@ -45,5 +45,5 @@ data/
 model/
 
 # Utils / temporary files
-utils/dataset_build.py
-utils/prepare_dataset.py
+src/dataset_build.py
+src/prepare_dataset.py
