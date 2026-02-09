@@ -101,6 +101,8 @@ graph TD
 
 ## API Usage Example
 
+* Model weights are not included. Train the model using train.py.
+
 Start the API:
 
 python app.py

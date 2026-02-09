@@ -41,6 +41,9 @@ ENV/
 # Data
 data/
 
+# Model
+model/
+
 # Utils / temporary files
 utils/dataset_build.py
 utils/prepare_dataset.py
