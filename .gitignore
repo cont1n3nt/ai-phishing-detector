@@ -1,25 +1,3 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Virtual environment
-venv/
-env/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Data (если не хочешь грузить исходники)
-data/*.csv
-
-# Environment variables
-.env
-
-# Logs
-*.log
-
 # VSCode / PyCharm / IDE
 .vscode/
 .idea/
@@ -28,3 +6,44 @@ data/*.csv
 utils/dataset_build.py
 utils/evaluate.py
 utils/train.py
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+*.joblib
+*.sqlite3
+*.db
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.env/
+.env
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Data
+data/
+
+# Models
+model/
+
+# Utils / temporary files
+utils/dataset_build.py
+utils/prepare_dataset.py
