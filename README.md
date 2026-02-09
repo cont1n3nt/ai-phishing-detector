@@ -103,25 +103,57 @@ graph TD
 
 * Model weights are not included. Train the model using train.py.
 
-Start the API:
+### 1. Create venv
 
+```bash
+python -m venv venv
+
+```
+#### Activate it
+```bash
+source venv/bin/activate # or venv\Scripts\activate on windows
+```
+
+### 2. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Prepare dataset
+Download any phishing detection dataset from Kaggle
+(e.g. phishing emails / SMS datasets).
+Place the dataset file into the data/ directory.
+
+#### ⚠️ Raw datasets are not included in this repository due to size and licensing constraints.
+
+### 4. Train the model
+```bash
+cd src
+python train.py
+```
+* Model will be saved into model/
+
+### 5. Run Flask API
+```bash
 python app.py
+```
 
-Request example:
-
+### 6. Use web or send prediction request
+```bash
 curl -X POST [http://127.0.0.1:5000/predict](http://127.0.0.1:5000/predict) 
 -H "Content-Type: application/json" 
 -d '{"text": "Your account is blocked. Verify immediately."}'
+```
 
 Example response:
-
+```json
 {
 "prediction": 1,
 "label": "PHISHING",
 "probability": 0.987,
 "top_words": [["verify", 0.84], ["account", 0.63]]
 }
-
+```
 ---
 
 ## Directory Structure
@@ -149,7 +181,11 @@ ai-phishing-detector/
 * Extend to multiple languages
 * Dockerize for deployment
 * Automatic retraining pipeline
-
+* Current pipeline relies on a pre-cleaned `cleaned_text` column in the dataset.
+  Ideally, the dataset should only contain raw `text` and `label` columns,
+  with all text preprocessing handled within the pipeline.
+  This will be fixed in the final version to ensure consistency between
+  training and inference.
 ---
 
 ## References
