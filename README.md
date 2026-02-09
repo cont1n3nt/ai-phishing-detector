@@ -47,9 +47,11 @@ Phishing attacks are a major cybersecurity threat. Automating detection helps re
 
 * Cross-validation F1-score: 0.986
 * ROC-AUC: 0.999
-[roc](images/roc_curve.png)
-* Confusion matrix:
-[matrix](images/new_conf_matrix.png)
+* Confusion matrix
+
+![roc](images/roc_curve.png)
+--
+![matrix](images/new_conf_matrix.png)
 
 ## Project Architecture
 
