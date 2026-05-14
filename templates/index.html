@@ -51,27 +51,44 @@
         body: JSON.stringify(data)
       });
       const json = await res.json();
+      resultDiv.innerHTML = "";
       if (json.error) {
-        resultDiv.innerHTML = `<p class="text-red-700 font-semibold">${json.error}</p>`;
+        const p = document.createElement("p");
+        p.className = "text-red-700 font-semibold";
+        p.textContent = json.error;
+        resultDiv.appendChild(p);
       } else {
-        let topWordsHTML = "";
-        if(json.top_words) {
-          topWordsHTML = "<p class='mt-2 font-semibold'>Top words contributing:</p><ul class='list-disc list-inside'>";
-          json.top_words.forEach(w => {
-            topWordsHTML += `<li>${w[0]} (${w[1].toFixed(3)})</li>`;
-          });
-          topWordsHTML += "</ul>";
-        }
+        const p1 = document.createElement("p");
+        p1.innerHTML = '<span class="font-semibold">Prediction:</span> ' + json.label;
+        resultDiv.appendChild(p1);
 
-        resultDiv.innerHTML = `
-          <p><span class="font-semibold">Prediction:</span> ${json.label}</p>
-          <p><span class="font-semibold">Probability:</span> ${json.probability}</p>
-          ${topWordsHTML}
-        `;
+        const p2 = document.createElement("p");
+        p2.innerHTML = '<span class="font-semibold">Probability:</span> ' + json.probability;
+        resultDiv.appendChild(p2);
+
+        if (json.top_words) {
+          const p3 = document.createElement("p");
+          p3.className = "mt-2 font-semibold";
+          p3.textContent = "Top words contributing:";
+          resultDiv.appendChild(p3);
+
+          const ul = document.createElement("ul");
+          ul.className = "list-disc list-inside";
+          json.top_words.forEach(w => {
+            const li = document.createElement("li");
+            li.textContent = `${w[0]} (${Number(w[1]).toFixed(3)})`;
+            ul.appendChild(li);
+          });
+          resultDiv.appendChild(ul);
+        }
       }
       resultDiv.classList.remove("hidden");
     } catch (err) {
-      resultDiv.innerHTML = `<p class="text-red-700 font-semibold">Error: ${err}</p>`;
+      resultDiv.innerHTML = "";
+      const p = document.createElement("p");
+      p.className = "text-red-700 font-semibold";
+      p.textContent = "Error: " + err.message;
+      resultDiv.appendChild(p);
       resultDiv.classList.remove("hidden");
     }
   });

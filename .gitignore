@@ -47,3 +47,6 @@ model/
 # Utils / temporary files
 src/dataset_build.py
 src/prepare_dataset.py
+
+# Empty / placeholder files
+static/style.css
