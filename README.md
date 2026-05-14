@@ -3,15 +3,13 @@
 ## Project Overview
 
 This project is a machine learning system for detecting phishing messages from text.
-It implements a full pipeline including preprocessing, model training, evaluation, inference, and a Flask API.
+It implements a full pipeline including preprocessing, model training, evaluation, inference, and a FastAPI.
 
 The solution uses TF-IDF vectorization and an ensemble model (VotingClassifier) combining:
 
 * Logistic Regression
 * Random Forest
 * XGBoost
-
-The project structure and engineering decisions follow middle-level ML engineering best practices.
 
 ---
 
@@ -93,7 +91,7 @@ graph TD
     E --> F[Evaluation & Metrics]
     F --> G[Saved Pipeline]
     G --> H[Inference: predict.py]
-    H --> I[Flask API: app.py]
+    H --> I[FastAPI: app.py]
     I --> J[Prediction Output]
 ```
 
@@ -133,14 +131,14 @@ python train.py
 ```
 * Model will be saved into model/
 
-### 5. Run Flask API
+### 5. Run FastAPI
 ```bash
 python app.py
 ```
 
 ### 6. Use web or send prediction request
 ```bash
-curl -X POST [http://127.0.0.1:5000/predict](http://127.0.0.1:5000/predict) 
+curl -X POST [http://127.0.0.1:8000/predict](http://127.0.0.1:8000/predict) 
 -H "Content-Type: application/json" 
 -d '{"text": "Your account is blocked. Verify immediately."}'
 ```
@@ -168,10 +166,9 @@ ai-phishing-detector/
   * features.py   preprocessing and explainability
   * train.py      training and evaluation
   * predict.py    inference logic
-* app.py       Flask API
+* app.py       FastAPI
 * requirements.txt
 * README.md
-* CHANGELOG.md
 
 ---
 

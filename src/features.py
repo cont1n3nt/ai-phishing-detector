@@ -7,13 +7,13 @@ from sklearn.ensemble import VotingClassifier
 MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "phishing_pipeline.pkl"
 DEFAULT_MIN_LENGTH: int = 20
 
-#Loading model
+
 def load_model() -> VotingClassifier:
     if not MODEL_PATH.exists():
         raise FileNotFoundError("Model file not found. Train the model first.")
     return joblib.load(MODEL_PATH)
 
-#Validate text
+
 def validate_text(data, min_length=DEFAULT_MIN_LENGTH) -> tuple[bool, str]:
     if not data:
         return False, "No JSON received"
@@ -33,7 +33,7 @@ def validate_text(data, min_length=DEFAULT_MIN_LENGTH) -> tuple[bool, str]:
 
     return True, text
 
-#Get top words
+
 def get_top_words(model, text, top_n=5) -> list[tuple[str, float]]:
     tfidf = model.named_steps["tfidf"]
     voting = model.named_steps["model"]
@@ -58,7 +58,7 @@ def get_top_words(model, text, top_n=5) -> list[tuple[str, float]]:
     return [(feature_names[i], round(contrib[i], 4)) for i in top_idx]
 
 
-# Utils for dataset
+
 def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""

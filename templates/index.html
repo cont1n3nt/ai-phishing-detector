@@ -14,7 +14,7 @@
 
     <form id="predict-form" method="post">
       <label class="block mb-2 font-semibold">Paste Email Text:</label>
-      <textarea name="text" rows="6" class="w-full p-2 border rounded mb-4" placeholder="Your email text here...">{{ request.form.text or '' }}</textarea>
+      <textarea name="text" rows="6" class="w-full p-2 border rounded mb-4" placeholder="Your email text here..."></textarea>
 
       <label class="block mb-2 font-semibold">Threshold: <span id="threshold-value">{{ threshold or 0.4 }}</span></label>
       <input type="range" min="0" max="1" step="0.01" value="{{ threshold or 0.4 }}" class="w-full mb-4" id="threshold-slider" name="threshold">
