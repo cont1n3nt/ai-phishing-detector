@@ -52,8 +52,10 @@ def train_and_evaluate(pipeline, X_train, y_train, X_test, y_test):
 
     pipeline.fit(X_train, y_train)
 
-    y_pred = pipeline.predict(X_test)
+
+    THRESHOLD = 0.4 # 0.4 for better recall, 0.5 for balanced
     y_proba = pipeline.predict_proba(X_test)[:, 1]
+    y_pred = (y_proba >= THRESHOLD).astype(int)
 
     metrics = {
         "Accuracy": accuracy_score(y_test, y_pred),
@@ -70,7 +72,7 @@ def train_and_evaluate(pipeline, X_train, y_train, X_test, y_test):
 def save_plots(y_test, y_pred, y_proba, metrics, roc_auc):
     os.makedirs(IMAGE_DIR, exist_ok=True)
 
-    # Metrics table
+    # metrics
     metrics_df = pd.DataFrame(metrics.items(), columns=["Metric", "Value"])
     plt.figure(figsize=(6, 2))
     sns.heatmap(metrics_df.set_index("Metric").T, annot=True, fmt=".3f", cmap="Blues", cbar=False)
@@ -79,7 +81,7 @@ def save_plots(y_test, y_pred, y_proba, metrics, roc_auc):
     plt.savefig(IMAGE_DIR / "metrics_table.png")
     plt.close()
 
-    # Confusion matrix
+    # CM
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
@@ -90,7 +92,7 @@ def save_plots(y_test, y_pred, y_proba, metrics, roc_auc):
     plt.savefig(IMAGE_DIR / "confusion_matrix.png")
     plt.close()
 
-    # ROC curve
+    # ROC
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     plt.figure()
     plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
