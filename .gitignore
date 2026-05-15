@@ -50,3 +50,8 @@ src/prepare_dataset.py
 
 # Empty / placeholder files
 static/style.css
+
+# AI Agents
+.opencode/
+skills/
+AGENTS.md
