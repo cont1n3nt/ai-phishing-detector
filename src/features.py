@@ -1,20 +1,25 @@
+import re
+from pathlib import Path
+
 import numpy as np
 import joblib
-from pathlib import Path
-import re
 from sklearn.ensemble import VotingClassifier
+from sklearn.pipeline import Pipeline
 
-MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "phishing_pipeline.pkl"
-DEFAULT_MIN_LENGTH: int = 20
-
-
-def load_model() -> VotingClassifier:
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError("Model file not found. Train the model first.")
-    return joblib.load(MODEL_PATH)
+from config import settings
 
 
-def validate_text(data, min_length=DEFAULT_MIN_LENGTH) -> tuple[bool, str]:
+def load_model() -> Pipeline:
+    model_path = settings.model_dir / settings.model_filename
+    if not model_path.exists():
+        raise FileNotFoundError("Model not found. Run: python scripts/download_model.py")
+    return joblib.load(model_path)
+
+
+def validate_text(data: dict | None, min_length: int | None = None) -> tuple[bool, str]:
+    if min_length is None:
+        min_length = settings.min_text_length
+
     if not data:
         return False, "No JSON received"
 
@@ -29,16 +34,19 @@ def validate_text(data, min_length=DEFAULT_MIN_LENGTH) -> tuple[bool, str]:
     text = text.strip()
 
     if len(text) < min_length:
-        return False, f"Text too short. Minimum length is {min_length} characters."
+        return False, f"Text too short. Minimum {min_length} characters."
 
     return True, text
 
 
-def get_top_words(model, text, top_n=5) -> list[tuple[str, float]]:
+def get_top_words(model: Pipeline, text: str, top_n: int = 5) -> list[tuple[str, float]]:
+    """Extract top-N words by contribution to prediction."""
+    clean_func = model.named_steps["clean"].func
+    cleaned = clean_func([text])[0]
+
     tfidf = model.named_steps["tfidf"]
     voting = model.named_steps["model"]
-
-    vector = tfidf.transform([text])
+    vector = tfidf.transform([cleaned])
 
     lr_model = None
     for (name, _), trained_est in zip(voting.estimators, voting.estimators_):
@@ -47,7 +55,7 @@ def get_top_words(model, text, top_n=5) -> list[tuple[str, float]]:
             break
 
     if lr_model is None or not hasattr(lr_model, "coef_"):
-        raise ValueError("Trained LogisticRegression not found in VotingClassifier")
+        raise ValueError("LogisticRegression not found in VotingClassifier")
 
     weights = lr_model.coef_[0]
     feature_names = tfidf.get_feature_names_out()
@@ -58,15 +66,15 @@ def get_top_words(model, text, top_n=5) -> list[tuple[str, float]]:
     return [(feature_names[i], round(contrib[i], 4)) for i in top_idx]
 
 
-
 def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = text.lower()
-    text = re.sub(r"http\S+|www\S+", " url ", text)    
+    text = re.sub(r"http\S+|www\S+", " url ", text)
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
+
 
 def preprocess_texts(texts: list[str]) -> list[str]:
     return [clean_text(t) for t in texts]

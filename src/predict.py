@@ -1,7 +1,8 @@
+from config import settings
 from src.features import load_model, get_top_words
 
-DEFAULT_THRESHOLD = 0.4
 _model = None
+
 
 def get_model():
     global _model
@@ -9,7 +10,11 @@ def get_model():
         _model = load_model()
     return _model
 
-def predict_email(text: str, threshold: float = DEFAULT_THRESHOLD) -> dict:
+
+def predict_email(text: str, threshold: float | None = None) -> dict:
+    if threshold is None:
+        threshold = settings.threshold
+
     model = get_model()
     top_words = get_top_words(model, text)
     probability = model.predict_proba([text])[0][1]

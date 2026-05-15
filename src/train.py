@@ -1,11 +1,13 @@
 import os
 import joblib
+import logging
+from pathlib import Path
+
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pathlib import Path
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -16,55 +18,71 @@ from sklearn.metrics import (
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.preprocessing import FunctionTransformer
-from src.features import clean_text
 from xgboost import XGBClassifier
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_FILE = BASE_DIR / "data" / "preprocess" / "cleaned_dataset.csv"
-MODEL_DIR = BASE_DIR / "model"
-IMAGE_DIR = BASE_DIR / "images"
+from src.features import clean_text
+from config import settings
 
-def load_data():
-    df = pd.read_csv(DATA_FILE)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
+
+
+def _clean_texts(texts):
+    return [clean_text(t) for t in texts]
+
+
+def load_data() -> tuple[pd.Series, pd.Series]:
+    df = pd.read_csv(settings.data_file)
     X = df["text"]
     y = df["label"]
-    print(f"Dataset size: {len(df)}")
-    print("Class distribution:")
-    print(y.value_counts())
+
+    logger.info(f"Dataset size: {len(df)}")
+    logger.info("Class distribution:\n%s", y.value_counts().to_string())
+
+    imbalance_ratio = y.value_counts().iloc[0] / y.value_counts().iloc[1]
+    if imbalance_ratio > 1.5 or imbalance_ratio < 0.67:
+        logger.warning("Class imbalance detected: ratio=%.2f", imbalance_ratio)
+
     return X, y
 
-def build_pipeline():
+
+def build_pipeline() -> Pipeline:
     lr = LogisticRegression(max_iter=1000)
     rf = RandomForestClassifier(n_estimators=200, random_state=42, n_jobs=-1)
-    xgb = XGBClassifier(n_estimators=200, random_state=42, tree_method="hist", eval_metric="logloss", n_jobs=-1)
+    xgb = XGBClassifier(
+        n_estimators=200, random_state=42,
+        tree_method="hist", eval_metric="logloss", n_jobs=-1
+    )
     voting_clf = VotingClassifier(
         estimators=[("lr", lr), ("rf", rf), ("xgb", xgb)],
         voting="soft"
     )
 
-    clean_step = FunctionTransformer(
-        func=lambda texts: [clean_text(t) for t in texts],
-        validate=False
-    )
-
     pipeline = Pipeline(steps=[
-        ("clean", clean_step),
+        ("clean", FunctionTransformer(func=_clean_texts, validate=False)),
         ("tfidf", TfidfVectorizer(max_features=5000, ngram_range=(1, 2))),
         ("model", voting_clf)
     ])
     return pipeline
 
-def train_and_evaluate(pipeline, X_train, y_train, X_test, y_test):
-    cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring="f1", n_jobs=-1)
-    print("5-Fold CV F1 scores:", cv_scores)
-    print("Mean F1 on train:", cv_scores.mean())
+
+def train_and_evaluate(
+    pipeline: Pipeline,
+    X_train: pd.Series,
+    y_train: pd.Series,
+    X_test: pd.Series,
+    y_test: pd.Series
+) -> tuple:
+    cv_scores = cross_val_score(
+        pipeline, X_train, y_train, cv=5, scoring="f1", n_jobs=-1
+    )
+    logger.info("5-Fold CV F1 scores: %s", cv_scores.round(4))
+    logger.info("Mean CV F1: %.4f", cv_scores.mean())
 
     pipeline.fit(X_train, y_train)
 
-
-    THRESHOLD = 0.4 # 0.4 for better recall, 0.5 for balanced
     y_proba = pipeline.predict_proba(X_test)[:, 1]
-    y_pred = (y_proba >= THRESHOLD).astype(int)
+    y_pred = (y_proba >= settings.threshold).astype(int)
 
     metrics = {
         "Accuracy": accuracy_score(y_test, y_pred),
@@ -73,24 +91,29 @@ def train_and_evaluate(pipeline, X_train, y_train, X_test, y_test):
         "F1-score": f1_score(y_test, y_pred),
         "ROC-AUC": roc_auc_score(y_test, y_proba),
     }
+
     for name, val in metrics.items():
-        print(f"{name}: {val:.3f}")
+        logger.info("%s: %.3f", name, val)
 
     return y_pred, y_proba, metrics
 
-def save_plots(y_test, y_pred, y_proba, metrics, roc_auc):
-    os.makedirs(IMAGE_DIR, exist_ok=True)
 
-    # metrics
+def save_plots(y_test, y_pred, y_proba, metrics: dict, roc_auc: float) -> None:
+    os.makedirs(settings.images_dir, exist_ok=True)
+
+    # metrics heatmap
     metrics_df = pd.DataFrame(metrics.items(), columns=["Metric", "Value"])
     plt.figure(figsize=(6, 2))
-    sns.heatmap(metrics_df.set_index("Metric").T, annot=True, fmt=".3f", cmap="Blues", cbar=False)
+    sns.heatmap(
+        metrics_df.set_index("Metric").T,
+        annot=True, fmt=".3f", cmap="Blues", cbar=False
+    )
     plt.title("Model Metrics on Test Set")
     plt.tight_layout()
-    plt.savefig(IMAGE_DIR / "metrics_table.png")
+    plt.savefig(settings.images_dir / "metrics_table.png")
     plt.close()
 
-    # CM
+    # confusion matrix
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
@@ -98,10 +121,10 @@ def save_plots(y_test, y_pred, y_proba, metrics, roc_auc):
     plt.ylabel("Actual")
     plt.title("Confusion Matrix")
     plt.tight_layout()
-    plt.savefig(IMAGE_DIR / "confusion_matrix.png")
+    plt.savefig(settings.images_dir / "confusion_matrix.png")
     plt.close()
 
-    # ROC
+    # roc curve
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     plt.figure()
     plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
@@ -111,24 +134,27 @@ def save_plots(y_test, y_pred, y_proba, metrics, roc_auc):
     plt.title("ROC Curve")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(IMAGE_DIR / "roc_curve.png")
+    plt.savefig(settings.images_dir / "roc_curve.png")
     plt.close()
 
-def save_model(pipeline):
-    os.makedirs(MODEL_DIR, exist_ok=True)
-    joblib.dump(pipeline, MODEL_DIR / "phishing_pipeline.pkl")
-    print("Pipeline saved successfully!")
-    
-    
-def train():
+
+def save_model(pipeline: Pipeline) -> None:
+    os.makedirs(settings.model_dir, exist_ok=True)
+    joblib.dump(pipeline, settings.model_dir / settings.model_filename)
+    logger.info("Pipeline saved to %s", settings.model_dir / settings.model_filename)
+
+
+def train() -> None:
     X, y = load_data()
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=42
     )
-    print(f"Train size: {len(X_train)}, Test size: {len(X_test)}")
+    logger.info("Train: %d, Test: %d", len(X_train), len(X_test))
 
     pipeline = build_pipeline()
-    y_pred, y_proba, metrics = train_and_evaluate(pipeline, X_train, y_train, X_test, y_test)
+    y_pred, y_proba, metrics = train_and_evaluate(
+        pipeline, X_train, y_train, X_test, y_test
+    )
     save_plots(y_test, y_pred, y_proba, metrics, metrics["ROC-AUC"])
     save_model(pipeline)
 
