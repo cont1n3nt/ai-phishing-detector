@@ -253,24 +253,6 @@ ai-phishing-detector/
 
 ---
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/my-feature`
-3. Make your changes and add tests
-4. Run the test suite: `pytest`
-5. Open a pull request
-
----
-
-## Limitations & Future Work
-
-* Add SHAP-based explainability
-* Extend to multiple languages
-* Automatic retraining pipeline
-
----
-
 ## References
 
 * [scikit-learn](https://scikit-learn.org/)
