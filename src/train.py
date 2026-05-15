@@ -15,6 +15,8 @@ from sklearn.metrics import (
 )
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.preprocessing import FunctionTransformer
+from src.features import clean_text
 from xgboost import XGBClassifier
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,7 +26,7 @@ IMAGE_DIR = BASE_DIR / "images"
 
 def load_data():
     df = pd.read_csv(DATA_FILE)
-    X = df["clean_text"]
+    X = df["text"]
     y = df["label"]
     print(f"Dataset size: {len(df)}")
     print("Class distribution:")
@@ -39,7 +41,14 @@ def build_pipeline():
         estimators=[("lr", lr), ("rf", rf), ("xgb", xgb)],
         voting="soft"
     )
+
+    clean_step = FunctionTransformer(
+        func=lambda texts: [clean_text(t) for t in texts],
+        validate=False
+    )
+
     pipeline = Pipeline(steps=[
+        ("clean", clean_step),
         ("tfidf", TfidfVectorizer(max_features=5000, ngram_range=(1, 2))),
         ("model", voting_clf)
     ])
