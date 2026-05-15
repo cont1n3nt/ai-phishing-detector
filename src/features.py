@@ -15,24 +15,6 @@ def load_model() -> Pipeline:
     return joblib.load(path)
 
 
-def validate_text(data: dict | None, min_length: int | None = None) -> tuple[bool, str]:
-    if min_length is None:
-        min_length = settings.min_text_length
-
-    if not data or "text" not in data:
-        return False, "missing 'text' field"
-
-    text = data["text"]
-    if not isinstance(text, str):
-        return False, "text must be a string"
-
-    text = text.strip()
-    if len(text) < min_length:
-        return False, f"text too short ({len(text)} chars, min {min_length})"
-
-    return True, text
-
-
 def get_top_words(model: Pipeline, text: str, top_n: int = 5) -> list[tuple[str, float]]:
     """Get words most influential for the prediction."""
     clean_func = model.named_steps["clean"].func

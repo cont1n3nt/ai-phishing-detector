@@ -37,7 +37,7 @@ def load_data():
     X = df["text"]
     y = df["label"]
 
-    logger.info(f"Loaded {len(df)} samples")
+    logger.info("Loaded %d samples", len(df))
     logger.info("Class distribution:\n%s", y.value_counts().to_string())
 
     r0, r1 = y.value_counts().iloc[0], y.value_counts().iloc[1]
@@ -50,7 +50,7 @@ def load_data():
 
 def build_pipeline():
     lr = LogisticRegression(max_iter=800, solver="lbfgs")
-    rf = RandomForestClassifier(n_estimators=150, max_depth=20, random_state=SEED, n_jobs=4)
+    rf = RandomForestClassifier(n_estimators=150, max_depth=20, random_state=SEED, n_jobs=-1)
     xgb = XGBClassifier(
         n_estimators=150,
         max_depth=6,
@@ -58,7 +58,7 @@ def build_pipeline():
         random_state=SEED,
         tree_method="hist",
         eval_metric="logloss",
-        n_jobs=4
+        n_jobs=-1
     )
     voting_clf = VotingClassifier(
         estimators=[("lr", lr), ("rf", rf), ("xgb", xgb)],

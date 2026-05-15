@@ -43,5 +43,5 @@ async def predict(body: PredictRequest):
 
 
 if __name__ == "__main__":
-    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    debug = os.getenv("FASTAPI_DEBUG", "0") == "1"
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=debug)
