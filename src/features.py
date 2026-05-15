@@ -1,5 +1,4 @@
 import re
-from pathlib import Path
 
 import numpy as np
 import joblib
@@ -10,37 +9,32 @@ from config import settings
 
 
 def load_model() -> Pipeline:
-    model_path = settings.model_dir / settings.model_filename
-    if not model_path.exists():
+    path = settings.model_dir / settings.model_filename
+    if not path.exists():
         raise FileNotFoundError("Model not found. Run: python scripts/download_model.py")
-    return joblib.load(model_path)
+    return joblib.load(path)
 
 
 def validate_text(data: dict | None, min_length: int | None = None) -> tuple[bool, str]:
     if min_length is None:
         min_length = settings.min_text_length
 
-    if not data:
-        return False, "No JSON received"
-
-    if "text" not in data:
-        return False, "No key 'text' in JSON"
+    if not data or "text" not in data:
+        return False, "missing 'text' field"
 
     text = data["text"]
-
     if not isinstance(text, str):
-        return False, "Text must be a string"
+        return False, "text must be a string"
 
     text = text.strip()
-
     if len(text) < min_length:
-        return False, f"Text too short. Minimum {min_length} characters."
+        return False, f"text too short ({len(text)} chars, min {min_length})"
 
     return True, text
 
 
 def get_top_words(model: Pipeline, text: str, top_n: int = 5) -> list[tuple[str, float]]:
-    """Extract top-N words by contribution to prediction."""
+    """Get words most influential for the prediction."""
     clean_func = model.named_steps["clean"].func
     cleaned = clean_func([text])[0]
 

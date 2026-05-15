@@ -1,4 +1,5 @@
 import os
+import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -7,6 +8,9 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 import src.predict as predictor
+
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Phishing Detector")
 templates = Jinja2Templates(directory="templates")
@@ -25,14 +29,17 @@ async def index(request: Request):
 @app.post("/predict")
 async def predict(body: PredictRequest):
     try:
-        result = predictor.predict_email(body.text, threshold=body.threshold)
-        return result
-    except FileNotFoundError:
+        return predictor.predict_email(body.text, threshold=body.threshold)
+    except FileNotFoundError as e:
         return JSONResponse(
-            {"error": "Model not found. Train the model first."}, status_code=503
+            {"error": str(e)}, status_code=503
         )
-    except Exception as e:
-        return JSONResponse({"error": f"Internal error: {str(e)}"}, status_code=500)
+    except RuntimeError as e:
+        logger.error("Prediction error: %s", e)
+        return JSONResponse({"error": "Prediction failed"}, status_code=500)
+    except Exception:
+        logger.exception("Unexpected error in /predict")
+        return JSONResponse({"error": "Internal server error"}, status_code=500)
 
 
 if __name__ == "__main__":

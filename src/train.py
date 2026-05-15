@@ -1,7 +1,6 @@
 import os
 import joblib
 import logging
-from pathlib import Path
 
 import pandas as pd
 import matplotlib
@@ -26,57 +25,61 @@ from config import settings
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
+SEED = 7
+
 
 def _clean_texts(texts):
     return [clean_text(t) for t in texts]
 
 
-def load_data() -> tuple[pd.Series, pd.Series]:
+def load_data():
     df = pd.read_csv(settings.data_file)
     X = df["text"]
     y = df["label"]
 
-    logger.info(f"Dataset size: {len(df)}")
+    logger.info(f"Loaded {len(df)} samples")
     logger.info("Class distribution:\n%s", y.value_counts().to_string())
 
-    imbalance_ratio = y.value_counts().iloc[0] / y.value_counts().iloc[1]
-    if imbalance_ratio > 1.5 or imbalance_ratio < 0.67:
-        logger.warning("Class imbalance detected: ratio=%.2f", imbalance_ratio)
+    r0, r1 = y.value_counts().iloc[0], y.value_counts().iloc[1]
+    imbalance = max(r0, r1) / min(r0, r1)
+    if imbalance > 1.5:
+        logger.warning("Imbalanced dataset: ratio=%.2f", imbalance)
 
     return X, y
 
 
-def build_pipeline() -> Pipeline:
-    lr = LogisticRegression(max_iter=1000)
-    rf = RandomForestClassifier(n_estimators=200, random_state=42, n_jobs=-1)
+def build_pipeline():
+    lr = LogisticRegression(max_iter=800, solver="lbfgs")
+    rf = RandomForestClassifier(n_estimators=150, max_depth=20, random_state=SEED, n_jobs=4)
     xgb = XGBClassifier(
-        n_estimators=200, random_state=42,
-        tree_method="hist", eval_metric="logloss", n_jobs=-1
+        n_estimators=150,
+        max_depth=6,
+        learning_rate=0.1,
+        random_state=SEED,
+        tree_method="hist",
+        eval_metric="logloss",
+        n_jobs=4
     )
     voting_clf = VotingClassifier(
         estimators=[("lr", lr), ("rf", rf), ("xgb", xgb)],
         voting="soft"
     )
 
-    pipeline = Pipeline(steps=[
+    return Pipeline(steps=[
         ("clean", FunctionTransformer(func=_clean_texts, validate=False)),
-        ("tfidf", TfidfVectorizer(max_features=5000, ngram_range=(1, 2))),
+        ("tfidf", TfidfVectorizer(
+            max_features=settings.max_features,
+            ngram_range=settings.ngram_range
+        )),
         ("model", voting_clf)
     ])
-    return pipeline
 
 
-def train_and_evaluate(
-    pipeline: Pipeline,
-    X_train: pd.Series,
-    y_train: pd.Series,
-    X_test: pd.Series,
-    y_test: pd.Series
-) -> tuple:
+def train_and_evaluate(pipeline, X_train, y_train, X_test, y_test):
     cv_scores = cross_val_score(
-        pipeline, X_train, y_train, cv=5, scoring="f1", n_jobs=-1
+        pipeline, X_train, y_train, cv=5, scoring="f1", n_jobs=4
     )
-    logger.info("5-Fold CV F1 scores: %s", cv_scores.round(4))
+    logger.info("CV F1 scores: %s", cv_scores.round(3))
     logger.info("Mean CV F1: %.4f", cv_scores.mean())
 
     pipeline.fit(X_train, y_train)
@@ -88,7 +91,7 @@ def train_and_evaluate(
         "Accuracy": accuracy_score(y_test, y_pred),
         "Precision": precision_score(y_test, y_pred),
         "Recall": recall_score(y_test, y_pred),
-        "F1-score": f1_score(y_test, y_pred),
+        "F1": f1_score(y_test, y_pred),
         "ROC-AUC": roc_auc_score(y_test, y_proba),
     }
 
@@ -98,22 +101,20 @@ def train_and_evaluate(
     return y_pred, y_proba, metrics
 
 
-def save_plots(y_test, y_pred, y_proba, metrics: dict, roc_auc: float) -> None:
+def save_plots(y_test, y_pred, y_proba, metrics, roc_auc):
     os.makedirs(settings.images_dir, exist_ok=True)
 
-    # metrics heatmap
     metrics_df = pd.DataFrame(metrics.items(), columns=["Metric", "Value"])
     plt.figure(figsize=(6, 2))
     sns.heatmap(
         metrics_df.set_index("Metric").T,
         annot=True, fmt=".3f", cmap="Blues", cbar=False
     )
-    plt.title("Model Metrics on Test Set")
+    plt.title("Model Metrics")
     plt.tight_layout()
     plt.savefig(settings.images_dir / "metrics_table.png")
     plt.close()
 
-    # confusion matrix
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
@@ -124,7 +125,6 @@ def save_plots(y_test, y_pred, y_proba, metrics: dict, roc_auc: float) -> None:
     plt.savefig(settings.images_dir / "confusion_matrix.png")
     plt.close()
 
-    # roc curve
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     plt.figure()
     plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
@@ -138,16 +138,17 @@ def save_plots(y_test, y_pred, y_proba, metrics: dict, roc_auc: float) -> None:
     plt.close()
 
 
-def save_model(pipeline: Pipeline) -> None:
+def save_model(pipeline):
     os.makedirs(settings.model_dir, exist_ok=True)
-    joblib.dump(pipeline, settings.model_dir / settings.model_filename)
-    logger.info("Pipeline saved to %s", settings.model_dir / settings.model_filename)
+    path = settings.model_dir / settings.model_filename
+    joblib.dump(pipeline, path)
+    logger.info("Model saved: %s", path)
 
 
-def train() -> None:
+def train():
     X, y = load_data()
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42
+        X, y, test_size=0.2, stratify=y, random_state=SEED
     )
     logger.info("Train: %d, Test: %d", len(X_train), len(X_test))
 
