@@ -27,8 +27,6 @@ Automated pipeline runs on every push and pull request to `main`/`master`:
 checkout → setup Python 3.11 → install deps → run unit tests (pytest)
 ```
 
-[![CI](https://github.com/cont1n3nt/ai-phishing-detector/actions/workflows/ci.yml/badge.svg)](https://github.com/cont1n3nt/ai-phishing-detector/actions/workflows/ci.yml)
-
 ---
 
 ## Installation
