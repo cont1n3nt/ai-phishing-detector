@@ -54,3 +54,17 @@ def clean_text(text: str) -> str:
 
 def preprocess_texts(texts: list[str]) -> list[str]:
     return [clean_text(t) for t in texts]
+
+
+def validate_text(payload: dict | None) -> tuple[bool, str]:
+    if payload is None or "text" not in payload:
+        return False, "text is missing"
+
+    text = payload["text"]
+    if not isinstance(text, str):
+        return False, "text must be a string"
+
+    if len(text.strip()) < 20:
+        return False, "text is too short"
+
+    return True, text
