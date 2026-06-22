@@ -19,7 +19,7 @@ The solution uses TF-IDF vectorization and an ensemble model (VotingClassifier) 
 
 ---
 
-## CI/CD
+## CI/CD 
 
 Automated pipeline runs on every push and pull request to `main`/`master`:
 
